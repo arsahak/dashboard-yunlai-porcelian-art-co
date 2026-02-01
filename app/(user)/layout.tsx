@@ -1,10 +1,8 @@
 import { LanguageProvider } from "@/lib/LanguageContext";
-import type { Metadata } from "next";
 import "../globals.css";
 
-export const metadata: Metadata = {
-  title: "Gyneclinics - Dashboard",
-  description: "Gyneclinics Dashboard",
+export const metadata = {
+  metadataBase: new URL("https://yunlai-porcelian-art-co.vercel.app"),
 };
 
 export default function AuthLayout({

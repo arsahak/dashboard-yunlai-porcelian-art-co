@@ -29,13 +29,7 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ stats, userName }: DashboardProps) => {
-  const { isdDarkMode } = useSidebar();
-  
-  // Use a reliable check for dark mode or specific colors if property name is tricky
-  // Assuming isDarkMode is the correct prop from previous files context
-  // Let's check SidebarContext usage in other files to be sure about the prop name.
-  // Sidebar.tsx uses "isDarkMode"
-  const isDarkMode = (useSidebar() as any).isDarkMode;
+  const { isDarkMode } = useSidebar();
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {

@@ -3,8 +3,17 @@ import { auth } from "@/auth";
 import Dashboard from "@/component/dashboardManagement/Dashboard";
 
 export const metadata = {
-  title: "Dashboard | Yunlai Porcelain Art Co",
-  description: "E-commerce dashboard overview",
+   title: "Yunlai Porcelain Art Co.",
+  description: "Beautiful collection of Yunlai porcelain art",
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-US": "/en-USA",
+    },
+  },
+  openGraph: {
+    images: "/opengraph-image.png",
+  },
 };
 
 export default async function DashboardPage() {

@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import {
-  FaBox,
-  FaEdit,
-  FaEye,
-  FaPlus,
-  FaSearch,
-  FaTrash,
+    FaBox,
+    FaEdit,
+    FaEye,
+    FaPlus,
+    FaSearch,
+    FaTrash,
 } from "react-icons/fa";
 import { MdInventory } from "react-icons/md";
 
@@ -305,7 +305,7 @@ const ProductManagement = ({
               {products.map((product) => {
                 const stockStatus = getStockStatus(product.stock);
                 const primaryImage = product.images?.find(i => i.isPrimary)?.url || product.images?.[0]?.url;
-                const categoryName = product.category && typeof product.category === 'object' ? product.category.name : (product.category || "Uncategorized");
+                const categoryName = product.category && typeof product.category === 'object' ? (product.category as any).name : (product.category || "Uncategorized");
 
                 return (
                   <tr
