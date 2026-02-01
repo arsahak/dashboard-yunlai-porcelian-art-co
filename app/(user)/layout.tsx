@@ -2,7 +2,7 @@ import { LanguageProvider } from "@/lib/LanguageContext";
 import "../globals.css";
 
 export const metadata = {
-  metadataBase: new URL("https://yunlai-porcelian-art-co.vercel.app"),
+  metadataBase: new URL("https://dashboard-yunlai-porcelian-art-co.vercel.app"),
 };
 
 export default function AuthLayout({

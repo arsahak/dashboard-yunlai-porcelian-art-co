@@ -1,10 +1,8 @@
 import LayoutWrapper from "@/component/layout/LayoutWrapper";
-import type { Metadata } from "next";
 import "../globals.css";
 
-export const metadata: Metadata = {
-  title: "Gyneclinics",
-  description: "Gyneclinics Management System",
+export const metadata = {
+  metadataBase: new URL("https://dashboard-yunlai-porcelian-art-co.vercel.app"),
 };
 
 export default function PageLayout({
