@@ -2,14 +2,17 @@
 import { createBlog } from "@/app/actions/blog";
 import { useSidebar } from "@/lib/SidebarContext";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import BlogForm, { BlogFormData } from "./BlogForm";
 
 const BlogAdd = () => {
   const router = useRouter();
   const { isDarkMode } = useSidebar();
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (data: BlogFormData) => {
+    setErrors({});
     try {
       const formData = new FormData();
       
@@ -45,7 +48,26 @@ const BlogAdd = () => {
         router.push("/blogs");
         router.refresh();
       } else {
-        toast.error(response.error || "Failed to create blog");
+        const errorMsg = response.error || "Failed to create blog";
+        toast.error(errorMsg);
+        
+        // Parse error to map to fields if possible
+        const newErrors: Record<string, string> = {};
+        const lowerError = errorMsg.toLowerCase();
+        
+        if (lowerError.includes("slug") || lowerError.includes("url")) {
+          newErrors.slug = "This slug is likely already in use or invalid.";
+        }
+        if (lowerError.includes("title")) {
+          newErrors.title = "Please check the title.";
+        }
+        if (lowerError.includes("author")) {
+          newErrors.author = "Author name is invalid.";
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+        }
       }
     } catch (error: any) {
       console.error("Error creating blog:", error);
@@ -66,7 +88,7 @@ const BlogAdd = () => {
         </p>
       </div>
       
-      <BlogForm onSubmit={handleSubmit} onCancel={handleCancel} />
+      <BlogForm onSubmit={handleSubmit} onCancel={handleCancel} errors={errors} />
     </div>
   );
 };

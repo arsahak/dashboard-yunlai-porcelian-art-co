@@ -8,25 +8,25 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useState } from "react";
 import {
-  FaAlignCenter,
-  FaAlignLeft,
-  FaAlignRight,
-  FaBold,
-  FaCode,
-  FaImage,
-  FaItalic,
-  FaLink,
-  FaListOl,
-  FaListUl,
-  FaPlus,
-  FaQuoteLeft,
-  FaRedo,
-  FaSave,
-  FaStrikethrough,
-  FaTimes,
-  FaUnderline,
-  FaUndo,
-  FaUpload
+    FaAlignCenter,
+    FaAlignLeft,
+    FaAlignRight,
+    FaBold,
+    FaCode,
+    FaImage,
+    FaItalic,
+    FaLink,
+    FaListOl,
+    FaListUl,
+    FaPlus,
+    FaQuoteLeft,
+    FaRedo,
+    FaSave,
+    FaStrikethrough,
+    FaTimes,
+    FaUnderline,
+    FaUndo,
+    FaUpload
 } from "react-icons/fa";
 import { IoMdArrowDropdown } from "react-icons/io";
 
@@ -52,9 +52,10 @@ interface BlogFormProps {
   onSubmit: (data: BlogFormData) => Promise<void>;
   onCancel: () => void;
   isEdit?: boolean;
+  errors?: Record<string, string>;
 }
 
-const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false }: BlogFormProps) => {
+const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {} }: BlogFormProps) => {
   const { isDarkMode } = useSidebar();
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -270,10 +271,13 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false }: BlogFormP
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.title ? 'border-red-500' : ''}`}
                   placeholder="Enter blog title"
                   required
                 />
+                {errors.title && (
+                  <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+                )}
               </div>
 
               <div>
@@ -283,10 +287,13 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false }: BlogFormP
                   name="slug"
                   value={formData.slug}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.slug ? 'border-red-500' : ''}`}
                   placeholder="blog-post-slug"
                   required
                 />
+                {errors.slug && (
+                  <p className="text-red-500 text-xs mt-1">{errors.slug}</p>
+                )}
                 <p className={`text-xs mt-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   URL-friendly version of the title
                 </p>
@@ -299,10 +306,13 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false }: BlogFormP
                   name="author"
                   value={formData.author}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.author ? 'border-red-500' : ''}`}
                   placeholder="Author name"
                   required
                 />
+                {errors.author && (
+                  <p className="text-red-500 text-xs mt-1">{errors.author}</p>
+                )}
               </div>
 
               <div>
