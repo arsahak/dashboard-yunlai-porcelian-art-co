@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FaPlus, FaSave, FaTimes, FaTrash, FaUpload } from "react-icons/fa";
 import { IoMdArrowDropdown } from "react-icons/io";
+import { ValidationErrors } from "./ProductAdd";
 
 // Color Variant Interface
 export interface ColorVariant {
@@ -43,6 +44,7 @@ interface ProductFormProps {
   onSubmit: (data: ProductFormData) => void;
   title: string;
   isSubmitting?: boolean;
+  errors?: ValidationErrors;
 }
 
 const ProductForm = ({
@@ -50,6 +52,7 @@ const ProductForm = ({
   onSubmit,
   title,
   isSubmitting = false,
+  errors = {},
 }: ProductFormProps) => {
   const { isDarkMode } = useSidebar();
   const router = useRouter();
@@ -293,26 +296,33 @@ const ProductForm = ({
             </h2>
             <div className="space-y-4">
               <div>
-                <label className={labelClass}>Product Name</label>
+                <label className={labelClass}>Product Name <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.name ? 'border-red-500' : ''}`}
                   placeholder="e.g. Ceramic Vase"
                   required
                 />
+                {errors.name && (
+                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                )}
               </div>
               <div>
-                <label className={labelClass}>Description</label>
+                <label className={labelClass}>Description <span className="text-red-500">*</span></label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  className={`${inputClass} h-32`}
-                  placeholder="Product description..."
+                  className={`${inputClass} h-32 ${errors.description ? 'border-red-500' : ''}`}
+                  placeholder="Product description (minimum 10 characters)..."
+                  required
                 />
+                {errors.description && (
+                  <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+                )}
               </div>
             </div>
           </div>
@@ -325,18 +335,21 @@ const ProductForm = ({
                 : "bg-white border-gray-200"
             }`}
           >
-            <h2 className="text-xl font-semibold mb-4">Media</h2>
+            <h2 className="text-xl font-semibold mb-4">Media <span className="text-red-500">*</span></h2>
             <div
               onClick={handleUploadClick}
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-opacity-50 transition-colors ${
                 isDarkMode
                   ? "border-gray-700 bg-gray-900 hover:bg-gray-800"
                   : "border-gray-300 bg-gray-50 hover:bg-gray-100"
-              }`}
+              } ${errors.images ? 'border-red-500' : ''}`}
             >
               <FaUpload className="mx-auto text-4xl mb-2 text-gray-400" />
               <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
                 Drag and drop images here, or click to upload
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Max size: 1MB | Formats: JPG, JPEG, PNG, WEBP
               </p>
               <input 
                 type="file" 
@@ -344,9 +357,12 @@ const ProductForm = ({
                 onChange={handleFileChange}
                 className="hidden" 
                 multiple 
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
               />
             </div>
+            {errors.images && (
+              <p className="text-red-500 text-xs mt-2">{errors.images}</p>
+            )}
              {/* Preview Images */}
             {(formData.existingImages?.length || 0) > 0 || formData.images.length > 0 ? (
               <div className="mt-4 grid grid-cols-4 gap-4">
@@ -433,6 +449,12 @@ const ProductForm = ({
                 Sizes ({formData.sizeVariants?.length || 0})
               </button>
             </div>
+            {errors.colorVariants && activeVariantTab === "colors" && (
+              <p className="text-red-500 text-sm mb-3">{errors.colorVariants}</p>
+            )}
+            {errors.sizeVariants && activeVariantTab === "sizes" && (
+              <p className="text-red-500 text-sm mb-3">{errors.sizeVariants}</p>
+            )}
 
             {/* Color Variants */}
             {activeVariantTab === "colors" && (
@@ -669,17 +691,20 @@ const ProductForm = ({
             <p className="text-sm text-gray-500 mb-4">Base price (individual sizes can have different prices)</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Base Price</label>
+                <label className={labelClass}>Base Price <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   name="price"
                   value={formData.price}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.price ? 'border-red-500' : ''}`}
                   min="0"
                   step="0.01"
                   required
                 />
+                {errors.price && (
+                  <p className="text-red-500 text-xs mt-1">{errors.price}</p>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Compare at Price</label>
@@ -782,27 +807,34 @@ const ProductForm = ({
             <h2 className="text-xl font-semibold mb-4">Inventory</h2>
             <div className="space-y-4">
               <div>
-                <label className={labelClass}>SKU (Stock Keeping Unit)</label>
+                <label className={labelClass}>SKU (Stock Keeping Unit) <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="sku"
                   value={formData.sku}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.sku ? 'border-red-500' : ''}`}
+                  placeholder="e.g. PROD-001"
                   required
                 />
+                {errors.sku && (
+                  <p className="text-red-500 text-xs mt-1">{errors.sku}</p>
+                )}
               </div>
               <div>
-                <label className={labelClass}>Quantity</label>
+                <label className={labelClass}>Quantity <span className="text-red-500">*</span></label>
                 <input
                   type="number"
                   name="stock"
                   value={formData.stock}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.stock ? 'border-red-500' : ''}`}
                   min="0"
                   required
                 />
+                {errors.stock && (
+                  <p className="text-red-500 text-xs mt-1">{errors.stock}</p>
+                )}
                 <p className="text-xs text-gray-500 mt-1">Base stock (sizes can have individual stock)</p>
               </div>
             </div>
@@ -818,13 +850,14 @@ const ProductForm = ({
           >
             <h2 className="text-xl font-semibold mb-4">Category</h2>
             <div>
-              <label className={labelClass}>Product Category</label>
+              <label className={labelClass}>Product Category <span className="text-red-500">*</span></label>
               <div className="relative">
                 <select
                   name="category"
                   value={formData.category || ""}
                   onChange={handleChange}
-                  className={`${inputClass} appearance-none cursor-pointer`}
+                  className={`${inputClass} appearance-none cursor-pointer ${errors.category ? 'border-red-500' : ''}`}
+                  required
                 >
                   <option value="">-- Select Category --</option>
                   {categories.map((cat) => (
@@ -836,6 +869,9 @@ const ProductForm = ({
                 <div className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   <IoMdArrowDropdown size={20} />
                 </div>
+                {errors.category && (
+                  <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                )}
                 {loadingCategories && (
                   <p className="text-xs text-gray-500 mt-1">Loading categories...</p>
                 )}

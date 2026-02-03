@@ -321,11 +321,14 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
                   name="excerpt"
                   value={formData.excerpt}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.excerpt ? 'border-red-500' : ''}`}
                   rows={3}
-                  placeholder="Short summary of the blog post"
+                  placeholder="Short summary of the blog post (minimum 10 characters)"
                   maxLength={500}
                 />
+                {errors.excerpt && (
+                  <p className="text-red-500 text-xs mt-1">{errors.excerpt}</p>
+                )}
                 <p className={`text-xs mt-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                   {formData.excerpt.length}/500 characters
                 </p>
@@ -339,7 +342,10 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
               isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
             }`}
           >
-            <h2 className="text-xl font-semibold mb-4">Content *</h2>
+            <h2 className="text-xl font-semibold mb-4">Content <span className="text-red-500">*</span></h2>
+            {errors.body && (
+              <p className="text-red-500 text-sm mb-3">{errors.body}</p>
+            )}
             
             {/* Editor Toolbar */}
             <div className={`flex flex-wrap gap-1 p-2 border rounded-t-lg ${
@@ -512,7 +518,7 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className={labelClass}>Category</label>
+                  <label className={labelClass}>Category <span className="text-red-500">*</span></label>
                   <button
                     type="button"
                     onClick={() => setIsAddingCategory(!isAddingCategory)}
@@ -574,6 +580,9 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
                     )}
                   </div>
                 )}
+                {errors.category && (
+                  <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                )}
               </div>
 
               <div>
@@ -599,6 +608,9 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
             }`}
           >
             <h2 className="text-xl font-semibold mb-4">Featured Image</h2>
+            {errors.featuredImage && (
+              <p className="text-red-500 text-sm mb-3">{errors.featuredImage}</p>
+            )}
             
             {imagePreview ? (
               <div className="relative">
@@ -619,7 +631,7 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
               <div>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
                   onChange={handleImageChange}
                   className="hidden"
                   id="featured-image"
@@ -630,10 +642,11 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
                     isDarkMode
                       ? "border-gray-600 hover:bg-gray-700"
                       : "border-gray-300 hover:bg-gray-50"
-                  }`}
+                  } ${errors.featuredImage ? 'border-red-500' : ''}`}
                 >
                   <FaUpload className="mx-auto text-3xl mb-2 text-gray-400" />
                   <p className="text-sm text-gray-500">Click to upload image</p>
+                  <p className="text-xs text-gray-400 mt-2">Max size: 1MB | Formats: JPG, JPEG, PNG, WEBP</p>
                 </label>
               </div>
             )}

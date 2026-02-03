@@ -10,6 +10,10 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaArrowLeft } from "react-icons/fa";
 
+// Image validation constants
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
+const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
 export default function EditCategoryPage({
   params,
 }: {
@@ -19,6 +23,7 @@ export default function EditCategoryPage({
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [initialData, setInitialData] = useState<Partial<CategoryFormData>>();
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchCategory = async () => {
@@ -47,7 +52,51 @@ export default function EditCategoryPage({
     fetchCategory();
   }, [params.id, router]);
 
+  // Validate image file
+  const validateImage = (file: File): string | null => {
+    if (file.size > MAX_IMAGE_SIZE) {
+      return `Image exceeds maximum size of 1MB (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
+    }
+    if (!ALLOWED_IMAGE_FORMATS.includes(file.type)) {
+      return `Invalid image format. Allowed: JPG, JPEG, PNG, WEBP`;
+    }
+    return null;
+  };
+
+  // Validate form fields
+  const validateForm = (data: CategoryFormData): Record<string, string> => {
+    const newErrors: Record<string, string> = {};
+    if (!data.title || data.title.trim() === "") {
+      newErrors.title = "Category title is required";
+    } else if (data.title.trim().length < 2) {
+      newErrors.title = "Title must be at least 2 characters";
+    } else if (data.title.trim().length > 100) {
+      newErrors.title = "Title must not exceed 100 characters";
+    }
+    if (data.description && data.description.trim().length > 0) {
+      if (data.description.trim().length < 10) {
+        newErrors.description = "Description must be at least 10 characters if provided";
+      }
+    }
+    if (data.image) {
+      const imageError = validateImage(data.image);
+      if (imageError) {
+        newErrors.image = imageError;
+      }
+    }
+    return newErrors;
+  };
+
   const handleSubmit = async (data: CategoryFormData) => {
+    setErrors({});
+    const validationErrors = validateForm(data);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      const firstError = Object.values(validationErrors)[0];
+      toast.error(firstError);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", data.title);
     formData.append("description", data.description);
@@ -124,6 +173,7 @@ export default function EditCategoryPage({
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isEdit
+          errors={errors}
         />
       )}
     </div>

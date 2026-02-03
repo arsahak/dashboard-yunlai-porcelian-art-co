@@ -17,6 +17,7 @@ interface CategoryFormProps {
   onSubmit: (data: CategoryFormData) => Promise<void>;
   onCancel: () => void;
   isEdit?: boolean;
+  errors?: Record<string, string>;
 }
 
 const CategoryForm = ({
@@ -24,6 +25,7 @@ const CategoryForm = ({
   onSubmit,
   onCancel,
   isEdit = false,
+  errors = {},
 }: CategoryFormProps) => {
   const { isDarkMode } = useSidebar();
   const [loading, setLoading] = useState(false);
@@ -108,16 +110,19 @@ const CategoryForm = ({
 
             <div className="space-y-4">
               <div>
-                <label className={labelClass}>Category Title *</label>
+                <label className={labelClass}>Category Title <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className={inputClass}
-                  placeholder="Enter category title"
+                  className={`${inputClass} ${errors.title ? 'border-red-500' : ''}`}
+                  placeholder="Enter category title (e.g. Ceramics, Vases)"
                   required
                 />
+                {errors.title && (
+                  <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+                )}
               </div>
 
               <div>
@@ -126,11 +131,14 @@ const CategoryForm = ({
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  className={inputClass}
+                  className={`${inputClass} ${errors.description ? 'border-red-500' : ''}`}
                   rows={4}
-                  placeholder="Enter category description"
+                  placeholder="Enter category description (optional, max 500 characters)"
                   maxLength={500}
                 />
+                {errors.description && (
+                  <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+                )}
                 <p
                   className={`text-xs mt-1 ${
                     isDarkMode ? "text-gray-400" : "text-gray-500"
@@ -178,6 +186,9 @@ const CategoryForm = ({
             }`}
           >
             <h2 className="text-xl font-semibold mb-4">Category Image</h2>
+            {errors.image && (
+              <p className="text-red-500 text-sm mb-3">{errors.image}</p>
+            )}
 
             {imagePreview ? (
               <div className="relative">
@@ -198,7 +209,7 @@ const CategoryForm = ({
               <div>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
                   onChange={handleImageChange}
                   className="hidden"
                   id="category-image"
@@ -209,11 +220,14 @@ const CategoryForm = ({
                     isDarkMode
                       ? "border-gray-600 hover:bg-gray-700"
                       : "border-gray-300 hover:bg-gray-50"
-                  }`}
+                  } ${errors.image ? 'border-red-500' : ''}`}
                 >
                   <FaUpload className="mx-auto text-3xl mb-2 text-gray-400" />
                   <p className="text-sm text-gray-500">
                     Click to upload image
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Max size: 1MB | Formats: JPG, JPEG, PNG, WEBP
                   </p>
                 </label>
               </div>
