@@ -14,11 +14,8 @@ import { FaArrowLeft } from "react-icons/fa";
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
 const ALLOWED_IMAGE_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-export default function EditCategoryPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+// Wrapper component to handle async params
+function EditCategoryContent({ categoryId }: { categoryId: string }) {
   const { isDarkMode } = useSidebar();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -29,7 +26,7 @@ export default function EditCategoryPage({
     const fetchCategory = async () => {
       setLoading(true);
       try {
-        const result = await getCategory(params.id);
+        const result = await getCategory(categoryId);
         if (result.success && result.data) {
           setInitialData({
             title: result.data.title,
@@ -50,7 +47,7 @@ export default function EditCategoryPage({
     };
 
     fetchCategory();
-  }, [params.id, router]);
+  }, [categoryId, router]);
 
   // Validate image file
   const validateImage = (file: File): string | null => {
@@ -106,13 +103,14 @@ export default function EditCategoryPage({
       formData.append("image", data.image);
     }
 
-    const updatePromise = updateCategory(params.id, formData);
+    const updatePromise = updateCategory(categoryId, formData);
 
     toast.promise(updatePromise, {
       loading: "Updating category...",
       success: (result) => {
         if (result.success) {
           router.push("/category");
+          router.refresh();
           return "Category updated successfully!";
         }
         throw new Error(result.error || "Failed to update category");
@@ -178,4 +176,14 @@ export default function EditCategoryPage({
       )}
     </div>
   );
+}
+
+// Main async export to handle Next.js 15 async params
+export default async function EditCategoryPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <EditCategoryContent categoryId={id} />;
 }
