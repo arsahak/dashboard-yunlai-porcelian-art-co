@@ -11,7 +11,7 @@ import { getTranslation } from "@/lib/translations";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FaBlog,
   FaBoxOpen,
@@ -92,7 +92,7 @@ export default function Sidebar() {
     }));
   };
 
-  const menuItems = getMenuItems(language);
+  const menuItems = useMemo(() => getMenuItems(language), [language]);
 
   // Get first letter of app title for logo fallback
   const getLogoLetter = () => {
@@ -102,7 +102,7 @@ export default function Sidebar() {
   return (
     <div className="relative">
       <aside
-        className={`fixed left-0 top-0 transition-all duration-200 h-screen shadow-sm z-50 flex flex-col ${
+        className={`fixed left-0 top-0 transition-[width] duration-300 ease-in-out h-screen shadow-sm z-50 flex flex-col ${
           isOpen ? "w-64 md:w-64 sm:w-56" : "w-16 md:w-16 sm:w-14"
         } ${isMobile && !isOpen ? "hidden" : ""} ${
           isDarkMode
@@ -112,13 +112,13 @@ export default function Sidebar() {
       >
         {/* Logo */}
         <div
-          className={`p-4 pb-5 mt-2 transition-colors duration-200 ${
+          className={`p-4 pb-5 mt-2 ${
             isDarkMode ? "border-b border-gray-700" : "border-b border-gray-200"
           }`}
         >
           <div className="flex items-center justify-center gap-3">
             <div
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-200 overflow-hidden ${
+              className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden ${
                 isDarkMode ? "bg-blue-600" : "bg-gray-800"
               }`}
             >
@@ -139,7 +139,7 @@ export default function Sidebar() {
             {isOpen && (
               <div>
                 <h1
-                  className={`text-lg font-semibold transition-colors duration-200 ${
+                  className={`text-lg font-semibold ${
                     isDarkMode ? "text-gray-100" : "text-gray-800"
                   }`}
                 >
@@ -163,7 +163,7 @@ export default function Sidebar() {
                 <div className="flex items-center">
                   <Link
                     href={item.path}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 flex-1 ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 flex-1 ${
                       isActive
                         ? isDarkMode
                           ? "bg-blue-900 text-blue-300"
@@ -174,7 +174,7 @@ export default function Sidebar() {
                     }`}
                   >
                     <span
-                      className={`transition-colors duration-200 ${
+                      className={`${
                         isDarkMode ? "text-gray-400" : "text-gray-600"
                       }`}
                     >
@@ -188,7 +188,7 @@ export default function Sidebar() {
                   {/* Badge */}
                   {isOpen && item.badge && (
                     <div
-                      className={`text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mr-2 transition-colors duration-200 ${
+                      className={`text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mr-2 ${
                         isDarkMode ? "bg-blue-600" : "bg-gray-600"
                       }`}
                     >
@@ -200,12 +200,12 @@ export default function Sidebar() {
                   {isOpen && item.expandable && (
                     <button
                       onClick={() => toggleSection(item.label)}
-                      className={`p-1 rounded transition-colors duration-200 ${
+                      className={`p-1 rounded transition-colors duration-150 ${
                         isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
                       }`}
                     >
                       <IoIosArrowDown
-                        className={`w-4 h-4 transition-all duration-200 ${
+                        className={`w-4 h-4 transition-transform duration-200 ${
                           isExpanded ? "rotate-180" : ""
                         } ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}
                       />
@@ -220,7 +220,7 @@ export default function Sidebar() {
                       <Link
                         key={subItem.path}
                         href={subItem.path}
-                        className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                        className={`block px-3 py-2 text-sm rounded-md transition-colors duration-150 ${
                           pathname === subItem.path
                             ? isDarkMode
                               ? "text-blue-300 bg-blue-900"
@@ -242,14 +242,14 @@ export default function Sidebar() {
 
         {/* Theme Toggle */}
         <div
-          className={`p-3 transition-colors duration-200 ${
+          className={`p-3 ${
             isDarkMode ? "border-t border-gray-700" : "border-t border-gray-200"
           }`}
         >
           {isOpen ? (
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150 ${
                 isDarkMode
                   ? "text-gray-300 hover:bg-gray-800"
                   : "text-gray-700 hover:bg-gray-50"
@@ -266,7 +266,7 @@ export default function Sidebar() {
                   : getTranslation("darkMode", language)}
               </span>
               <span
-                className={`text-xs px-2 py-1 rounded-full transition-colors duration-200 ${
+                className={`text-xs px-2 py-1 rounded-full ${
                   isDarkMode
                     ? "bg-gray-700 text-gray-300"
                     : "bg-gray-100 text-gray-600"
@@ -279,7 +279,7 @@ export default function Sidebar() {
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`w-full flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors duration-200 ${
+                className={`w-full flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors duration-150 ${
                   isDarkMode
                     ? "text-gray-300 hover:bg-gray-800"
                     : "text-gray-700 hover:bg-gray-50"
@@ -292,7 +292,7 @@ export default function Sidebar() {
                 )}
               </button>
               <span
-                className={`text-xs px-2 py-1 rounded-full transition-colors duration-200 ${
+                className={`text-xs px-2 py-1 rounded-full ${
                   isDarkMode
                     ? "bg-gray-700 text-gray-300"
                     : "bg-gray-100 text-gray-600"
@@ -308,7 +308,7 @@ export default function Sidebar() {
       {/* Toggle Button - Responsive positioning */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed top-1/2 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 z-50 w-6 h-6 md:w-7 md:h-7 sm:w-5 sm:h-5 ${
+        className={`fixed top-1/2 rounded-full flex items-center justify-center shadow-sm transition-[left] duration-300 ease-in-out z-50 w-6 h-6 md:w-7 md:h-7 sm:w-5 sm:h-5 ${
           isDarkMode
             ? "bg-gray-800 border border-gray-600 hover:bg-gray-700"
             : "bg-white border border-gray-300 hover:bg-gray-50"

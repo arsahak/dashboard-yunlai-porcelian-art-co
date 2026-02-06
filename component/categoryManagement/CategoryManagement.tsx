@@ -3,7 +3,7 @@
 import { Category, deleteCategory, getCategories } from "@/app/actions/category";
 import { useSidebar } from "@/lib/SidebarContext";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { FaEdit, FaPlus, FaSearch, FaTrash } from "react-icons/fa";
 
@@ -27,37 +27,102 @@ const CategoryManagement = ({
   const [statusFilter, setStatusFilter] = useState("all");
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState(initialPagination || {
+    total: 0,
+    page: 1,
+    limit: 20,
+    pages: 1,
+  });
 
-  // Stats calculation
-  const totalCategories = initialPagination?.total || categories.length;
-  const activeCategories = categories.filter((c) => c.status === "active").length;
-  const inactiveCategories = categories.filter((c) => c.status === "inactive").length;
-  const totalProducts = categories.reduce((sum, c) => sum + (c.productCount || 0), 0);
+  // Memoized stats calculation
+  const stats = useMemo(() => {
+    const active = categories.filter((c) => c.status === "active").length;
+    const inactive = categories.filter((c) => c.status === "inactive").length;
+    const totalProds = categories.reduce((sum, c) => sum + (c.productCount || 0), 0);
+    return {
+      total: pagination.total || categories.length,
+      active,
+      inactive,
+      totalProducts: totalProds,
+    };
+  }, [categories, pagination.total]);
 
-  const handleSearch = async (term: string) => {
+  // Debounced search
+  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  
+  const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
-    setLoading(true);
-    const response = await getCategories({ search: term, status: statusFilter !== "all" ? statusFilter : undefined });
-    if (response.success && response.data) {
-      setCategories(response.data);
+    
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
-    setLoading(false);
-  };
+    
+    searchTimeoutRef.current = setTimeout(async () => {
+      setLoading(true);
+      const response = await getCategories({ 
+        page: 1,
+        limit: pagination.limit,
+        search: term || undefined, 
+        status: statusFilter !== "all" ? statusFilter : undefined 
+      });
+      if (response.success && response.data) {
+        setCategories(response.data);
+        if (response.pagination) {
+          setPagination(response.pagination);
+        }
+      }
+      setLoading(false);
+    }, 500);
+  }, [statusFilter, pagination.limit]);
+  
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  const handleFilter = async (status: string) => {
+  const handleFilter = useCallback(async (status: string) => {
     setStatusFilter(status);
     setLoading(true);
     const response = await getCategories({ 
+      page: 1,
+      limit: pagination.limit,
       search: searchTerm || undefined, 
       status: status !== "all" ? status : undefined 
     });
     if (response.success && response.data) {
       setCategories(response.data);
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
     }
     setLoading(false);
-  };
+  }, [searchTerm, pagination.limit]);
 
-  const handleDelete = async (id: string, title: string) => {
+  const handlePageChange = useCallback(async (newPage: number) => {
+    if (newPage < 1 || newPage > pagination.pages) return;
+    
+    setLoading(true);
+    const response = await getCategories({
+      page: newPage,
+      limit: pagination.limit,
+      search: searchTerm || undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+    });
+    
+    if (response.success && response.data) {
+      setCategories(response.data);
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setLoading(false);
+  }, [pagination.pages, pagination.limit, searchTerm, statusFilter]);
+
+  const handleDelete = useCallback(async (id: string, title: string) => {
     if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
 
     const deletePromise = deleteCategory(id);
@@ -74,9 +139,9 @@ const CategoryManagement = ({
       },
       error: (err) => err.message || "Failed to delete category",
     });
-  };
+  }, [categories, router]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     const colors: Record<string, string> = {
       active: isDarkMode
         ? "bg-green-900 text-green-300"
@@ -86,7 +151,7 @@ const CategoryManagement = ({
         : "bg-gray-100 text-gray-800",
     };
     return colors[status] || "";
-  };
+  }, [isDarkMode]);
 
   return (
     <div
@@ -168,7 +233,7 @@ const CategoryManagement = ({
               >
                 Total Categories
               </p>
-              <p className="text-2xl font-bold text-blue-500">{totalCategories}</p>
+              <p className="text-2xl font-bold text-blue-500">{stats.total}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
               <FaPlus className="text-blue-600 text-xl" />
@@ -191,7 +256,7 @@ const CategoryManagement = ({
               >
                 Active
               </p>
-              <p className="text-2xl font-bold text-green-500">{activeCategories}</p>
+              <p className="text-2xl font-bold text-green-500">{stats.active}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
               <span className="text-green-600 text-lg font-bold">✓</span>
@@ -214,7 +279,7 @@ const CategoryManagement = ({
               >
                 Inactive
               </p>
-              <p className="text-2xl font-bold text-gray-500">{inactiveCategories}</p>
+              <p className="text-2xl font-bold text-gray-500">{stats.inactive}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
               <span className="text-gray-600 text-lg font-bold">−</span>
@@ -237,7 +302,7 @@ const CategoryManagement = ({
               >
                 Total Products
               </p>
-              <p className="text-2xl font-bold text-purple-500">{totalProducts}</p>
+              <p className="text-2xl font-bold text-purple-500">{stats.totalProducts}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
               <span className="text-purple-600 text-lg font-bold">📦</span>
@@ -379,14 +444,42 @@ const CategoryManagement = ({
             </table>
           )}
         </div>
-      </div>
-
-      {/* Summary */}
-      {!loading && categories.length > 0 && (
-        <div className="mt-4 text-center text-gray-500 text-sm">
-          Showing {categories.length} of {totalCategories} categories
+        
+        {/* Pagination */}
+        <div
+          className={`px-6 py-4 flex items-center justify-between border-t ${
+            isDarkMode ? "border-gray-700" : "border-gray-200"
+          }`}
+        >
+          <div className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
+            Showing page {pagination.page} of {pagination.pages} ({pagination.total} total categories)
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1 || loading}
+              className={`px-4 py-2 rounded-lg border transition-colors ${
+                isDarkMode
+                  ? "border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  : "border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              }`}
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.pages || loading}
+              className={`px-4 py-2 rounded-lg border transition-colors ${
+                isDarkMode
+                  ? "border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  : "border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              }`}
+            >
+              Next
+            </button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -3,15 +3,15 @@ import { deleteProduct, getProducts, Product } from "@/app/actions/product";
 import { useSidebar } from "@/lib/SidebarContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
-    FaBox,
-    FaEdit,
-    FaEye,
-    FaPlus,
-    FaSearch,
-    FaTrash,
+  FaBox,
+  FaEdit,
+  FaEye,
+  FaPlus,
+  FaSearch,
+  FaTrash,
 } from "react-icons/fa";
 import { MdInventory } from "react-icons/md";
 
@@ -35,21 +35,35 @@ const ProductManagement = ({
   const [filterStatus, setFilterStatus] = useState("all");
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState(initialPagination || {
+    total: 0,
+    page: 1,
+    limit: 20,
+    pages: 1,
+  });
 
-  // Stats calculation
-  const totalProducts = products.length; // This is only for current page, ideally should come from stats API
-  const activeProducts = products.filter((p) => p.status === "active").length;
-  const lowStockProducts = products.filter((p) => p.stock <= 10 && p.stock > 0).length;
-  const outOfStockProducts = products.filter((p) => p.stock === 0).length;
+  // Memoized stats calculation - only recalculate when products change
+  const stats = useMemo(() => {
+    const active = products.filter((p) => p.status === "active").length;
+    const lowStock = products.filter((p) => p.stock <= 10 && p.stock > 0).length;
+    const outOfStock = products.filter((p) => p.stock === 0).length;
+    return {
+      total: pagination.total || products.length,
+      active,
+      lowStock,
+      outOfStock,
+    };
+  }, [products, pagination.total]);
 
-  const formatCurrency = (amount: number) => {
+  // Memoize utility functions to prevent recreation on every render
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount);
-  };
+  }, []);
 
-  const getStockStatus = (stock: number) => {
+  const getStockStatus = useCallback((stock: number) => {
     if (stock === 0) {
       return { label: "Out of Stock", color: "text-red-600 bg-red-100" };
     } else if (stock <= 10) {
@@ -57,9 +71,9 @@ const ProductManagement = ({
     } else {
       return { label: "In Stock", color: "text-green-600 bg-green-100" };
     }
-  };
+  }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     const colors: Record<string, string> = {
       active: isDarkMode
         ? "bg-green-900 text-green-300"
@@ -72,20 +86,83 @@ const ProductManagement = ({
         : "bg-red-100 text-red-800",
     };
     return colors[status] || "";
-  };
+  }, [isDarkMode]);
 
-  const handleSearch = async (term: string) => {
+  // Debounced search to prevent API spam
+  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  
+  const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
+    
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Debounce API call by 500ms
+    searchTimeoutRef.current = setTimeout(async () => {
+      setLoading(true);
+      const response = await getProducts(1, 20, term);
+      if (response.success && response.data) {
+        setProducts(response.data as Product[]);
+        if (response.pagination) {
+          setPagination(response.pagination);
+        }
+      }
+      setLoading(false);
+    }, 500);
+  }, []);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handlePageChange = useCallback(async (newPage: number) => {
+    if (newPage < 1 || newPage > pagination.pages) return;
+    
     setLoading(true);
-    // In a real app, debounce this
-    const response = await getProducts(1, 20, term);
+    const response = await getProducts(
+      newPage,
+      pagination.limit,
+      searchTerm,
+      filterStatus !== "all" ? { status: filterStatus } : undefined
+    );
+    
     if (response.success && response.data) {
       setProducts(response.data as Product[]);
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
+      // Scroll to top of the table
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     setLoading(false);
-  };
+  }, [pagination.pages, pagination.limit, searchTerm, filterStatus]);
 
-  const handleDelete = async (id: string) => {
+  const handleStatusFilter = useCallback(async (status: string) => {
+    setFilterStatus(status);
+    setLoading(true);
+    const response = await getProducts(
+      1,
+      pagination.limit,
+      searchTerm,
+      status !== "all" ? { status } : undefined
+    );
+    if (response.success && response.data) {
+      setProducts(response.data as Product[]);
+      if (response.pagination) {
+        setPagination(response.pagination);
+      }
+    }
+    setLoading(false);
+  }, [pagination.limit, searchTerm]);
+
+  const handleDelete = useCallback(async (id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
       const response = await deleteProduct(id);
       if (response.success) {
@@ -97,7 +174,7 @@ const ProductManagement = ({
         toast.error(response.error || "Failed to delete product");
       }
     }
-  };
+  }, [products, router]);
 
   return (
     <div
@@ -139,7 +216,7 @@ const ProductManagement = ({
           {/* Filter */}
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => handleStatusFilter(e.target.value)}
             className={`px-4 py-2 rounded-lg border ${
               isDarkMode
                 ? "bg-gray-800 border-gray-700 text-gray-100"
@@ -180,7 +257,7 @@ const ProductManagement = ({
               >
                 Total Products
               </p>
-              <p className="text-2xl font-bold">{totalProducts}</p>
+              <p className="text-2xl font-bold">{stats.total}</p>
             </div>
             <FaBox className="text-blue-500 text-3xl" />
           </div>
@@ -201,7 +278,7 @@ const ProductManagement = ({
               >
                 Active
               </p>
-              <p className="text-2xl font-bold text-green-500">{activeProducts}</p>
+              <p className="text-2xl font-bold text-green-500">{stats.active}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
               <span className="text-green-600 text-lg font-bold">✓</span>
@@ -224,7 +301,7 @@ const ProductManagement = ({
               >
                 Low Stock
               </p>
-              <p className="text-2xl font-bold text-yellow-500">{lowStockProducts}</p>
+              <p className="text-2xl font-bold text-yellow-500">{stats.lowStock}</p>
             </div>
             <MdInventory className="text-yellow-500 text-3xl" />
           </div>
@@ -245,7 +322,7 @@ const ProductManagement = ({
               >
                 Out of Stock
               </p>
-              <p className="text-2xl font-bold text-red-500">{outOfStockProducts}</p>
+              <p className="text-2xl font-bold text-red-500">{stats.outOfStock}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
               <span className="text-red-600 text-lg font-bold">!</span>
@@ -264,7 +341,22 @@ const ProductManagement = ({
       >
         <div className="overflow-x-auto">
           {loading ? (
-             <div className="p-6 text-center">Loading products...</div>
+            <div className="p-6">
+              <div className="space-y-3 animate-pulse">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded-md ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    <div className="flex-1 space-y-2">
+                      <div className={`h-4 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} style={{ width: '40%' }} />
+                      <div className={`h-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} style={{ width: '60%' }} />
+                    </div>
+                    <div className={`h-8 w-20 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    <div className={`h-8 w-16 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    <div className={`h-8 w-24 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
           <table className="w-full">
             <thead className={isDarkMode ? "bg-gray-700" : "bg-gray-50"}>
@@ -422,25 +514,27 @@ const ProductManagement = ({
           }`}
         >
           <div className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-            Showing {initialPagination?.page || 1} of {initialPagination?.pages || 1} pages
+            Showing page {pagination.page} of {pagination.pages} ({pagination.total} total products)
           </div>
           <div className="flex gap-2">
             <button
-              disabled={!initialPagination || initialPagination.page <= 1}
-              className={`px-4 py-2 rounded-lg border ${
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1 || loading}
+              className={`px-4 py-2 rounded-lg border transition-colors ${
                 isDarkMode
-                  ? "border-gray-700 hover:bg-gray-700 disabled:opacity-50"
-                  : "border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                  ? "border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  : "border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               }`}
             >
               Previous
             </button>
             <button
-              disabled={!initialPagination || initialPagination.page >= initialPagination.pages}
-              className={`px-4 py-2 rounded-lg border ${
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.pages || loading}
+              className={`px-4 py-2 rounded-lg border transition-colors ${
                 isDarkMode
-                  ? "border-gray-700 hover:bg-gray-700 disabled:opacity-50"
-                  : "border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                  ? "border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  : "border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               }`}
             >
               Next
