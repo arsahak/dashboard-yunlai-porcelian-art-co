@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
-    FaEdit,
-    FaEye,
-    FaNewspaper,
-    FaPlus,
-    FaSearch,
-    FaStar,
-    FaTrash,
+  FaEdit,
+  FaEye,
+  FaNewspaper,
+  FaPlus,
+  FaSearch,
+  FaStar,
+  FaTrash,
 } from "react-icons/fa";
 
 interface BlogManagementProps {
@@ -375,6 +375,10 @@ const BlogManagement = ({
                               src={blog.featuredImage}
                               alt={blog.title}
                               className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
                             />
                           </div>
                         )}

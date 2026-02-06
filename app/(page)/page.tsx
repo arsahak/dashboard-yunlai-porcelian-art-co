@@ -1,9 +1,11 @@
 import { getDashboardStats } from "@/app/actions/dashboard";
 import { auth } from "@/auth";
 import Dashboard from "@/component/dashboardManagement/Dashboard";
+import { Suspense } from "react";
+import DashboardLoading from "./loading";
 
 export const metadata = {
-   title: "Yunlai Porcelain Art Co.",
+  title: "Yunlai Porcelain Art Co.",
   description: "Beautiful collection of Yunlai porcelain art",
   alternates: {
     canonical: "/",
@@ -16,7 +18,7 @@ export const metadata = {
   },
 };
 
-export default async function DashboardPage() {
+async function DashboardData() {
   const session = await auth();
   const userName = session?.user?.name || "User";
 
@@ -53,4 +55,12 @@ export default async function DashboardPage() {
       </div>
     );
   }
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardData />
+    </Suspense>
+  );
 }

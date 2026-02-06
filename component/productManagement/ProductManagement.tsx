@@ -410,7 +410,15 @@ const ProductManagement = ({
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0 rounded-md bg-gray-200 overflow-hidden relative">
                            {primaryImage && (
-                              <img src={primaryImage} alt={product.name} className="w-full h-full object-cover"/>
+                              <img 
+                                src={primaryImage} 
+                                alt={product.name} 
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
                            )}
                            {!primaryImage && <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />}
                         </div>
