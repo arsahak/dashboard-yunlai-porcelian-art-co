@@ -2,7 +2,7 @@ import LayoutWrapper from "@/component/layout/LayoutWrapper";
 import "../globals.css";
 
 export const metadata = {
-  metadataBase: new URL("https://dashboard-yunlai-porcelian-art-co.vercel.app"),
+  metadataBase: new URL("http://dashboard.yixingyunlai.com"),
 };
 
 export default function PageLayout({

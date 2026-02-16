@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  metadataBase: new URL("https://dashboard-yunlai-porcelian-art-co.vercel.app"),
+  metadataBase: new URL("http://dashboard.yixingyunlai.com"),
 };
 
 export default function RootLayout({
