@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { revalidatePath } from "next/cache";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -187,6 +188,7 @@ export async function createBlog(formData: FormData): Promise<BlogResponse> {
       };
     }
 
+    revalidatePath("/blogs");
     return {
       success: true,
       message: data.message || "Blog created successfully",
@@ -228,6 +230,7 @@ export async function updateBlog(
       };
     }
 
+    revalidatePath("/blogs");
     return {
       success: true,
       message: data.message || "Blog updated successfully",
@@ -261,6 +264,7 @@ export async function deleteBlog(id: string): Promise<BlogResponse> {
       };
     }
 
+    revalidatePath("/blogs");
     return {
       success: true,
       message: data.message || "Blog deleted successfully",

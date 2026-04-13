@@ -6,23 +6,23 @@ export default function BlogsLoading() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setIsDark(isDarkMode);
+    const savedTheme = localStorage.getItem("theme");
+    setIsDark(savedTheme === "dark");
   }, []);
 
   return (
     <div className={`min-h-screen p-6 ${isDark ? "bg-gray-900" : "bg-gray-50"}`}>
       {/* Header Skeleton */}
       <div className="mb-6 animate-pulse">
-        <div className={`h-8 w-40 rounded mb-2 ${isDark ? "bg-gray-800" : "bg-gray-200"}`}></div>
-        <div className={`h-4 w-80 rounded ${isDark ? "bg-gray-800" : "bg-gray-200"}`}></div>
+        <div className={`h-8 w-40 rounded mb-2 ${isDark ? "bg-gray-700" : "bg-gray-200"}`}></div>
+        <div className={`h-4 w-80 rounded ${isDark ? "bg-gray-700" : "bg-gray-200"}`}></div>
       </div>
 
       {/* Search and Filter Skeleton */}
       <div className="mb-6 flex flex-col md:flex-row gap-4 animate-pulse">
-        <div className={`h-10 flex-1 max-w-md rounded-lg ${isDark ? "bg-gray-800" : "bg-gray-200"}`}></div>
-        <div className={`h-10 w-40 rounded-lg ${isDark ? "bg-gray-800" : "bg-gray-200"}`}></div>
-        <div className={`h-10 w-40 rounded-lg ${isDark ? "bg-blue-600" : "bg-blue-500"}`}></div>
+        <div className={`h-10 flex-1 max-w-md rounded-lg ${isDark ? "bg-gray-700" : "bg-gray-200"}`}></div>
+        <div className={`h-10 w-40 rounded-lg ${isDark ? "bg-gray-700" : "bg-gray-200"}`}></div>
+        <div className={`h-10 w-40 rounded-lg ${isDark ? "bg-blue-700" : "bg-blue-500"}`}></div>
       </div>
 
       {/* Stats Cards Skeleton */}
@@ -103,18 +103,9 @@ export default function BlogsLoading() {
       {/* Loading indicator */}
       <div className="mt-6 text-center">
         <div className="inline-flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-blue-500" : "bg-blue-600"}`}
-            style={{ animationDelay: "0ms" }}
-          ></div>
-          <div
-            className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-blue-500" : "bg-blue-600"}`}
-            style={{ animationDelay: "150ms" }}
-          ></div>
-          <div
-            className={`w-2 h-2 rounded-full animate-bounce ${isDark ? "bg-blue-500" : "bg-blue-600"}`}
-            style={{ animationDelay: "300ms" }}
-          ></div>
+          <div className="w-2 h-2 rounded-full animate-bounce bg-blue-500" style={{ animationDelay: "0ms" }}></div>
+          <div className="w-2 h-2 rounded-full animate-bounce bg-blue-500" style={{ animationDelay: "150ms" }}></div>
+          <div className="w-2 h-2 rounded-full animate-bounce bg-blue-500" style={{ animationDelay: "300ms" }}></div>
         </div>
         <p className={`mt-2 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
           Loading blogs...

@@ -149,8 +149,8 @@ const BlogAdd = () => {
 
       if (response.success) {
         toast.success("Blog created successfully!");
-        router.push("/blogs");
         router.refresh();
+        router.push("/blogs");
       } else {
         const errorMsg = response.error || "Failed to create blog";
         toast.error(errorMsg);

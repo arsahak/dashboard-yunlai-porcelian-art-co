@@ -5,10 +5,9 @@ import { useEffect, useState } from "react";
 export default function Loading() {
   const [isDark, setIsDark] = useState(false);
 
-  // Detect system theme preference
   useEffect(() => {
-    const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setIsDark(isDarkMode);
+    const savedTheme = localStorage.getItem("theme");
+    setIsDark(savedTheme === "dark");
   }, []);
 
   return (

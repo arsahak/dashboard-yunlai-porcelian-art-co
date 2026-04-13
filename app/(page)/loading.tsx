@@ -6,8 +6,8 @@ export default function DashboardLoading() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setIsDark(isDarkMode);
+    const savedTheme = localStorage.getItem("theme");
+    setIsDark(savedTheme === "dark");
   }, []);
 
   return (
