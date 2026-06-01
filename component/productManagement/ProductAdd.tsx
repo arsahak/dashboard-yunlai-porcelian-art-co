@@ -70,10 +70,11 @@ const ProductAdd = () => {
       newErrors.stock = "Stock cannot be negative";
     }
 
-    // Validate description
-    if (!data.description || data.description.trim() === "") {
+    // Validate description (HTML content from rich text editor)
+    const plainDescription = data.description.replace(/<[^>]*>/g, "").trim();
+    if (!data.description || data.description.trim() === "" || data.description === "<p></p>") {
       newErrors.description = "Product description is required";
-    } else if (data.description.trim().length < 10) {
+    } else if (plainDescription.length < 10) {
       newErrors.description = "Description must be at least 10 characters";
     }
 

@@ -1,12 +1,14 @@
 "use client";
 import { useSidebar } from "@/lib/SidebarContext";
+import Color from "@tiptap/extension-color";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     FaAlignCenter,
     FaAlignLeft,
@@ -77,17 +79,37 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
     ...initialData,
   });
 
+  const [headingOpen, setHeadingOpen] = useState(false);
+  const headingDropdownRef = useRef<HTMLDivElement>(null);
+  const [colorOpen, setColorOpen] = useState(false);
+  const colorDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (headingDropdownRef.current && !headingDropdownRef.current.contains(e.target as Node)) {
+        setHeadingOpen(false);
+      }
+      if (colorDropdownRef.current && !colorDropdownRef.current.contains(e.target as Node)) {
+        setColorOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   // Initialize Tiptap Editor
   const editor = useEditor({
     immediatelyRender: false, // Fix SSR hydration issues
     extensions: [
       StarterKit.configure({
-        // Disable built-in extensions that we're adding separately
         heading: {
           levels: [1, 2, 3, 4, 5, 6],
         },
       }),
       Underline,
+      TextStyle,
+      Color,
       Image.configure({
         inline: true,
         allowBase64: true,
@@ -238,17 +260,40 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
     return <div>Loading editor...</div>;
   }
 
-  const MenuButton = ({ onClick, active, children }: any) => (
+  const MenuButton = ({ onClick, active, children, title }: any) => (
     <button
       type="button"
       onClick={onClick}
-      className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 ${
-        active ? 'bg-gray-300 dark:bg-gray-600' : ''
+      title={title}
+      className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
+        active ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : ''
       }`}
     >
       {children}
     </button>
   );
+
+  const getActiveHeadingLabel = () => {
+    for (let i = 1; i <= 6; i++) {
+      if (editor.isActive('heading', { level: i })) return `H${i}`;
+    }
+    return 'P';
+  };
+
+  const SPAN_COLORS = [
+    { label: 'Default', value: '' },
+    { label: 'Red', value: '#ef4444' },
+    { label: 'Orange', value: '#f97316' },
+    { label: 'Yellow', value: '#eab308' },
+    { label: 'Green', value: '#22c55e' },
+    { label: 'Blue', value: '#3b82f6' },
+    { label: 'Indigo', value: '#6366f1' },
+    { label: 'Purple', value: '#a855f7' },
+    { label: 'Pink', value: '#ec4899' },
+    { label: 'Gray', value: '#6b7280' },
+    { label: 'White', value: '#ffffff' },
+    { label: 'Black', value: '#111827' },
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -351,54 +396,161 @@ const BlogForm = ({ initialData, onSubmit, onCancel, isEdit = false, errors = {}
             <div className={`flex flex-wrap gap-1 p-2 border rounded-t-lg ${
               isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
             }`}>
-              <MenuButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}>
+
+              {/* Heading / Paragraph Dropdown */}
+              <div className="relative" ref={headingDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setHeadingOpen((v) => !v)}
+                  title="Text style"
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors min-w-[52px] ${
+                    isDarkMode ? 'text-gray-100' : 'text-gray-800'
+                  }`}
+                >
+                  <span>{getActiveHeadingLabel()}</span>
+                  <IoMdArrowDropdown />
+                </button>
+                {headingOpen && (
+                  <div className={`absolute left-0 top-full mt-1 z-50 rounded-lg shadow-lg border min-w-[140px] ${
+                    isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+                  }`}>
+                    <button
+                      type="button"
+                      onClick={() => { editor.chain().focus().setParagraph().run(); setHeadingOpen(false); }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-t-lg ${
+                        editor.isActive('paragraph') ? 'font-bold text-blue-600 dark:text-blue-400' : ''
+                      }`}
+                    >
+                      <span className="text-sm">Paragraph &lt;p&gt;</span>
+                    </button>
+                    {([1, 2, 3, 4, 5, 6] as const).map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => { editor.chain().focus().toggleHeading({ level }).run(); setHeadingOpen(false); }}
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                          level === 6 ? 'rounded-b-lg' : ''
+                        } ${editor.isActive('heading', { level }) ? 'font-bold text-blue-600 dark:text-blue-400' : ''}`}
+                        style={{ fontSize: `${Math.max(11, 20 - (level - 1) * 2)}px`, fontWeight: level <= 3 ? 700 : 500 }}
+                      >
+                        H{level} &lt;h{level}&gt;
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 self-center" />
+
+              <MenuButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold">
                 <FaBold />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}>
+              <MenuButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic">
                 <FaItalic />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')}>
+              <MenuButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline">
                 <FaUnderline />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}>
+              <MenuButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Strikethrough">
                 <FaStrikethrough />
               </MenuButton>
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-              <MenuButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}>
+
+              {/* Span / Text Color */}
+              <div className="relative" ref={colorDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setColorOpen((v) => !v)}
+                  title="Text color (span)"
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded text-sm font-mono hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
+                    isDarkMode ? 'text-gray-100' : 'text-gray-800'
+                  }`}
+                >
+                  <span
+                    style={{ color: (editor.getAttributes('textStyle').color as string) || 'currentColor' }}
+                    className="font-bold text-base leading-none"
+                  >
+                    A
+                  </span>
+                  <div
+                    className="w-3 h-1 rounded-sm mt-0.5"
+                    style={{ backgroundColor: (editor.getAttributes('textStyle').color as string) || '#6b7280' }}
+                  />
+                  <IoMdArrowDropdown />
+                </button>
+                {colorOpen && (
+                  <div className={`absolute left-0 top-full mt-1 z-50 rounded-lg shadow-lg border p-2 ${
+                    isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+                  }`}>
+                    <p className={`text-xs mb-2 px-1 font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Text Color &lt;span&gt;
+                    </p>
+                    <div className="grid grid-cols-4 gap-1.5 min-w-[160px]">
+                      {SPAN_COLORS.map(({ label, value }) => (
+                        <button
+                          key={label}
+                          type="button"
+                          title={label}
+                          onClick={() => {
+                            if (value === '') {
+                              editor.chain().focus().unsetColor().run();
+                            } else {
+                              editor.chain().focus().setColor(value).run();
+                            }
+                            setColorOpen(false);
+                          }}
+                          className={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform flex items-center justify-center ${
+                            (editor.getAttributes('textStyle').color as string) === value
+                              ? 'border-blue-500'
+                              : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                          style={{ backgroundColor: value || (isDarkMode ? '#374151' : '#f3f4f6') }}
+                        >
+                          {value === '' && (
+                            <span className={`text-xs font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>×</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 self-center" />
+              <MenuButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Bullet list">
                 <FaListUl />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}>
+              <MenuButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Ordered list">
                 <FaListOl />
               </MenuButton>
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-              <MenuButton onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })}>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 self-center" />
+              <MenuButton onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Align left">
                 <FaAlignLeft />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })}>
+              <MenuButton onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Align center">
                 <FaAlignCenter />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })}>
+              <MenuButton onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Align right">
                 <FaAlignRight />
               </MenuButton>
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-              <MenuButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')}>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 self-center" />
+              <MenuButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} title="Blockquote">
                 <FaQuoteLeft />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')}>
+              <MenuButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Code block">
                 <FaCode />
               </MenuButton>
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-              <MenuButton onClick={addLink}>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 self-center" />
+              <MenuButton onClick={addLink} title="Add link">
                 <FaLink />
               </MenuButton>
-              <MenuButton onClick={addImage}>
+              <MenuButton onClick={addImage} title="Add image">
                 <FaImage />
               </MenuButton>
-              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
-              <MenuButton onClick={() => editor.chain().focus().undo().run()}>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 self-center" />
+              <MenuButton onClick={() => editor.chain().focus().undo().run()} title="Undo">
                 <FaUndo />
               </MenuButton>
-              <MenuButton onClick={() => editor.chain().focus().redo().run()}>
+              <MenuButton onClick={() => editor.chain().focus().redo().run()} title="Redo">
                 <FaRedo />
               </MenuButton>
             </div>
